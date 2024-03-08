@@ -1288,7 +1288,10 @@ impl Client {
     pub fn new(url: &str, auth: Auth) -> Result<Self> {
         let (user, pass) = auth.get_user_pass()?;
 
-        let transport = jsonrpc::http::minreq_http::MinreqHttpTransport::new();
+        let transport = jsonrpc::http::minreq_http::MinreqHttpTransport::builder()
+            .url(url)
+            .map_err(|e| super::error::Error::JsonRpc(e.into()))?
+            .build();
         let client = jsonrpc::Client::with_transport(transport);
 
         Ok(Self {
