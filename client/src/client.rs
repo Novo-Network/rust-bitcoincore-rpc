@@ -1287,11 +1287,13 @@ impl Client {
     /// Can only return [Err] when using cookie authentication.
     pub fn new(url: &str, auth: Auth) -> Result<Self> {
         let (user, pass) = auth.get_user_pass()?;
-        jsonrpc::client::Client::simple_http(url, user, pass)
-            .map(|client| Client {
-                client,
-            })
-            .map_err(|e| super::error::Error::JsonRpc(e.into()))
+
+        let transport = jsonrpc::http::minreq_http::MinreqHttpTransport::new();
+        let client = jsonrpc::Client::with_transport(transport);
+
+        Ok(Self {
+            client,
+        })
     }
 
     /// Create a new Client using the given [jsonrpc::Client].
