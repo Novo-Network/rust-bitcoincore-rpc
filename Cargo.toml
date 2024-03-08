@@ -1,7 +1,7 @@
 [workspace]
 
-members = [
-    "json",
-    "client",
-    "integration_test",
-]
+members = ["json", "client", "integration_test"]
+
+
+[patch.crates-io]
+jsonrpc = { git = "https://github.com/Novo-Network/rust-jsonrpc.git" }

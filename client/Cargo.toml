@@ -23,7 +23,7 @@ bitcoincore-rpc-json = { version = "0.18.0", path = "../json" }
 
 log = "0.4.5"
 jsonrpc = { version = "0.17.0", default-features = true, features = [
-  "minreq_http",
+  "minreq_http_https_bundled_probe",
 ] }
 
 # Used for deserialization of JSON.
