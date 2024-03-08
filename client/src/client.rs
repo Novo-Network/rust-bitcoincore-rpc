@@ -195,8 +195,8 @@ impl RawTx for String {
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Auth {
     None,
-    UserPass(String, String),
-    CookieFile(PathBuf),
+    UserPass(String, Option<String>),
+    CookieFile(String),
 }
 
 impl Auth {
@@ -204,12 +204,8 @@ impl Auth {
     pub fn get_user_pass(self) -> Result<(Option<String>, Option<String>)> {
         match self {
             Auth::None => Ok((None, None)),
-            Auth::UserPass(u, p) => Ok((Some(u), Some(p))),
-            Auth::CookieFile(path) => {
-                let line = BufReader::new(File::open(path)?)
-                    .lines()
-                    .next()
-                    .ok_or(Error::InvalidCookieFile)??;
+            Auth::UserPass(u, p) => Ok((Some(u), p)),
+            Auth::CookieFile(line) => {
                 let colon = line.find(':').ok_or(Error::InvalidCookieFile)?;
                 Ok((Some(line[..colon].into()), Some(line[colon + 1..].into())))
             }
@@ -1286,13 +1282,17 @@ impl Client {
     ///
     /// Can only return [Err] when using cookie authentication.
     pub fn new(url: &str, auth: Auth) -> Result<Self> {
-        let (user, pass) = auth.get_user_pass()?;
-
         let transport = jsonrpc::http::minreq_http::MinreqHttpTransport::builder()
             .url(url)
-            .map_err(|e| super::error::Error::JsonRpc(e.into()))?
-            .build();
-        let client = jsonrpc::Client::with_transport(transport);
+            .map_err(|e| super::error::Error::JsonRpc(e.into()))?;
+
+        let transport = match auth {
+            Auth::UserPass(user, pass) => transport.basic_auth(user, pass),
+            Auth::CookieFile(cookie) => transport.cookie_auth(cookie),
+            Auth::None => transport,
+        };
+
+        let client = jsonrpc::Client::with_transport(transport.build());
 
         Ok(Self {
             client,
